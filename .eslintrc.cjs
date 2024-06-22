@@ -24,7 +24,14 @@ module.exports = {
     // @see https://github.com/prettier/eslint-plugin-prettier
     'plugin:prettier/recommended',
   ],
-  rules: {},
+  rules: {
+    'vue/multi-word-component-names': [
+      'error',
+      {
+        ignores: ['Home', 'Layout'],
+      },
+    ],
+  },
   // 方式一：
   // lint js?(x) ts?(x)文件
   // eslint-config-taro 没有引入相关依赖
@@ -40,7 +47,7 @@ module.exports = {
   // 不使用taro配置包，自定义lint ts文件
   overrides: [
     {
-      files: ['src/**/*.ts'],
+      files: ['src/**/*.ts', 'slaves/**/*.ts'],
       parser: '@typescript-eslint/parser',
       plugins: ['@typescript-eslint'],
       parserOptions: {

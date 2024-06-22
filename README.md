@@ -1,4 +1,5 @@
 ![ci](https://img.shields.io/github/actions/workflow/status/singcl/XmVideoPlayer/main.yml?branch=master&?label=build&logo=github)
+[![publish](https://github.com/singcl/XmVideoPlayer/actions/workflows/main.yml/badge.svg)](https://github.com/singcl/XmVideoPlayer/actions/workflows/main.yml)
 ![GitHub package.json version](https://img.shields.io/github/package-json/v/singcl/XmVideoPlayer)
 [![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-%23FE5196?logo=conventionalcommits&logoColor=white)](https://conventionalcommits.org)
@@ -14,7 +15,8 @@
 
 ### Prerequisites
 
-`node >= 16`
+- `node >= 18`
+- 资源转换依赖`ffmpeg`，应用每次启动会自动检测是否安装`ffmpeg`, 若没有安装则会自动下载并安装，已安装则跳过 WOW🎉!
 
 ### Start
 
@@ -23,22 +25,41 @@
 npm run tauri dev
 ```
 
+### Preview 🤩
+
+|                                                                                        启动自检下载 ffmpeg/首页/下载                                                                                        |                                                                                   播放/编辑和删除/下载                                                                                   |
+| :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+| [![启动自动检测下载ffmpeg](https://img.picgo.net/2024/05/28/ffmpeg2ac49a43a24f286e.gif)](https://www.picgo.net/image/%E5%90%AF%E5%8A%A8%E8%87%AA%E5%8A%A8%E6%A3%80%E6%B5%8B%E4%B8%8B%E8%BD%BDffmpeg.SPUkSq) |    [![播放](https://img.picgo.net/2024/06/07/9a8f76173e71adf4767565a9aa47d5918e397c7ecc221b9c.gif)](https://www.picgo.net/image/%E7%BC%96%E8%BE%91%E5%92%8C%E5%88%A0%E9%99%A4.SgZ227)    |
+|           [![首页列表](https://img.picgo.net/2024/06/07/75a0169feece420655b95640841444bc0b34c0dadad76dc3.gif)](https://www.picgo.net/image/%E7%BC%96%E8%BE%91%E5%92%8C%E5%88%A0%E9%99%A4.SgZ13q)            | [![编辑和删除](https://img.picgo.net/2024/05/28/d940986e0326a3e42934e8ac11fd32e0ce89b826259ba990.gif)](https://www.picgo.net/image/%E7%BC%96%E8%BE%91%E5%92%8C%E5%88%A0%E9%99%A4.SPU8D2) |
+|             [![下载](https://img.picgo.net/2024/06/07/fa6c04118f580854954b7d415d05f54d83f96416916912fc.gif)](https://www.picgo.net/image/%E7%BC%96%E8%BE%91%E5%92%8C%E5%88%A0%E9%99%A4.SgZc9m)              |    [![下载](https://img.picgo.net/2024/06/07/fbe336315fcaff0a89948f7e5816927be396fd70bbec663a.gif)](https://www.picgo.net/image/%E7%BC%96%E8%BE%91%E5%92%8C%E5%88%A0%E9%99%A4.SgBNaq)    |
+
+### Preview Gif 🤩
+
+|                                                                                            启动自动检测下载 ffmpeg                                                                                             |                                                        下载 m3u8 资源自动合并为 mp4                                                         |
+| :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------------------------------------------------------------: |
+| [![启动自动检测下载ffmpeg](https://img.picgo.net/2024/05/28/ffmpeg2ac49a43a24f286e.md.gif)](https://www.picgo.net/image/%E5%90%AF%E5%8A%A8%E8%87%AA%E5%8A%A8%E6%A3%80%E6%B5%8B%E4%B8%8B%E8%BD%BDffmpeg.SPUkSq) | [![m3u8 download](https://img.picgo.net/2024/05/28/m3u8_download15a99fd99b9008e9.md.gif)](https://www.picgo.net/image/m3u8-download.SPU1NW) |
+
+|                                                             播放 m3u8 资源                                                             |                                                                            反馈                                                                            |
+| :------------------------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------: |
+| [![播放m3u8](https://img.picgo.net/2024/05/28/m3u8601a4f219e6142de.md.gif)](https://www.picgo.net/image/%E6%92%AD%E6%94%BEm3u8.SPUUVi) | [![反馈](https://img.picgo.net/2024/05/28/c0a7babc91b0b7fe52d1c8a54e58a1b604816655f83bc3fa.md.gif)](https://www.picgo.net/image/%E5%8F%8D%E9%A6%88.SPUow4) |
+
+|                                                                            主题                                                                            |                                                                                          编辑和删                                                                                           |
+| :--------------------------------------------------------------------------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+| [![主题](https://img.picgo.net/2024/05/28/fcc87cf2cb4c6d82b9eaf707f3d4a6efaf5c76b0b78d4bcb.md.gif)](https://www.picgo.net/image/%E4%B8%BB%E9%A2%98.SPUWhu) | [![编辑和删除](https://img.picgo.net/2024/05/28/d940986e0326a3e42934e8ac11fd32e0ce89b826259ba990.md.gif)](https://www.picgo.net/image/%E7%BC%96%E8%BE%91%E5%92%8C%E5%88%A0%E9%99%A4.SPU8D2) |
+
 ### 学习资料 🤩
 
 #### MACOS
 
-|                          macos 截图                          |                          macos 截图                          |
+|                      macos 截图 - 主题                       |                      macos 截图 - 播放                       |
 | :----------------------------------------------------------: | :----------------------------------------------------------: |
-| ![macos](https://s2.loli.net/2022/10/31/Kr2BkOsG4RbUtjL.jpg) | ![macos](https://s2.loli.net/2022/10/31/sgWo4AHpKqFLlRr.jpg) |
-| ![macos](https://s2.loli.net/2022/10/31/YbprKqoi7OI1Zhf.jpg) | ![macos](https://s2.loli.net/2022/10/31/qnY7IGduLh415JQ.jpg) |
+| ![macos](https://s2.loli.net/2022/10/31/sgWo4AHpKqFLlRr.jpg) | ![macos](https://s2.loli.net/2022/10/31/qnY7IGduLh415JQ.jpg) |
 
 #### Windows
 
-|                          Windows 截图                           |                          Windows 截图                           |
-| :-------------------------------------------------------------: | :-------------------------------------------------------------: |
-|   ![界面](https://s2.loli.net/2022/09/18/4Yid5Ql81wnV2bU.png)   |   ![界面](https://s2.loli.net/2022/09/18/cbzwIdaXvoxWMi9.png)   |
-| ![下载进度](https://s2.loli.net/2022/10/08/74otrlVCgKR2hfE.png) | ![本地视频](https://s2.loli.net/2022/10/10/jVI1m54AwbckHR2.png) |
-|   ![界面](https://s2.loli.net/2023/11/13/7RVG1XvjNcSDBgz.png)   |                                                                 |
+|                       Windows 截图 - 播放                       |                     Windows 截图 - 下载                     |
+| :-------------------------------------------------------------: | :---------------------------------------------------------: |
+| ![本地视频](https://s2.loli.net/2022/10/10/jVI1m54AwbckHR2.png) | ![界面](https://s2.loli.net/2024/05/25/2HonVT5Kuw3WBDN.png) |
 
 ## Roadmap
 
@@ -59,9 +80,15 @@ npm run tauri dev
 - [x] UI 兼容竖版视频
 - [x] 提供主题界面 🎉！
 - [x] Updater 🎉！
-- [ ] 提供简单的视频格式转换工具
 - [ ] Window Customization
 - [ ] 截图功能
+- [x] 首页播放列表
+
+## Revision plan
+
+- [ ] 视频播放详情页
+- [ ] 提供简单的视频格式转换工具
+- [ ] Planing...
 
 ## XmVideoPlayer Releases
 

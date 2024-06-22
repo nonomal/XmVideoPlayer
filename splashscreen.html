@@ -5,26 +5,40 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/logo.svg" />
-    <link rel="stylesheet" type="text/css" href="/src/styles/loading.css" />
-    <link rel="stylesheet" type="text/css" href="/src/styles/names.css" />
+    <!-- <link rel="stylesheet" type="text/css" href="/src/styles/loading.css" /> -->
+    <!-- <link rel="stylesheet" type="text/css" href="/src/styles/names.css" /> -->
     <title>XmVideoPlayer Loading</title>
-    <style>
-      body {
-        margin: 0;
-        background: linear-gradient(91deg, #f1eefc, #9dc6ff 70%, #a5bcff);
-      }
-    </style>
   </head>
   <body>
-    <div class="start-wrapper">
-      <h1 class="start-name">XmVideoPlayer</h1>
-      <div class="start loading">
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
+    <div id="app">
+      <div class="start-wrapper">
+        <h1 class="start-name">XmVideoPlayer</h1>
+        <div class="start loading">
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
       </div>
+      <!-- <div id="tips"></div> -->
     </div>
   </body>
+  <!-- <script>
+    // access the pre-bundled global API functions
+    // "withGlobalTauri": false
+    const { /*WebviewWindow,*/ appWindow } = window.__TAURI__.window;
+    // const splashscreenWindow = WebviewWindow.getByLabel('splashscreen');
+
+    document.addEventListener('DOMContentLoaded', () => {
+      appWindow.listen('init_resources', (e) => {
+        // event.event is the event name (useful if you want to use a single callback fn for multiple event types)
+        // event.payload is the payload object
+        // console.log(e.payload);
+        const message = e.payload.message || '';
+        document.getElementById('tips').innerHTML = message;
+      });
+    });
+  </script> -->
+  <script type="module" src="/slaves/splashscreen/main.ts"></script>
 </html>

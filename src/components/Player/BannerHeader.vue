@@ -5,7 +5,13 @@
         <div class="avatar-dec"></div>
       </div>
       <div class="op">
-        <icon-refresh v-if="loading" class="op-ico" :size="24" :style="{ color: '#a5bcff' }" spin />
+        <icon-refresh
+          v-if="m3u8Loading || normalLoading"
+          class="op-ico"
+          :size="24"
+          :style="{ color: '#a5bcff' }"
+          spin
+        />
         <icon-cloud-download
           v-else
           class="op-ico"
@@ -18,41 +24,29 @@
       </div>
     </div>
     <a-tooltip>
-      <div v-if="downloadPayload.total > 0" class="progress">
+      <div v-if="downloadPayload.total > 0 && downloadPayload.current < downloadPayload.total" class="progress">
+        <div class="progress__track">
+          {{ downloadPayload.message }}
+        </div>
         <div
-          v-for="item in downloadPayload.total"
-          :key="item"
-          :style="{ width: `${(1 / downloadPayload.total) * 100}%` }"
-          :class="{ success: downloadPayload.current >= item }"
+          :style="{ width: `${(downloadPayload.current / downloadPayload.total) * 100}%` }"
+          :class="{ success: downloadPayload.current >= downloadPayload.total }"
           class="progress__chunk"
         ></div>
       </div>
       <template #content>
-        <a-progress
-          type="circle"
-          :stroke-width="12"
-          :percent="Number(Number(downloadPayload.current / downloadPayload.total).toFixed(2))"
-        />
+        <a-progress type="circle" :stroke-width="12" :percent="percent" />
       </template>
     </a-tooltip>
   </div>
 </template>
 
 <script setup lang="ts">
-import { appWindow /* WebviewWindow */ } from '@tauri-apps/api/window';
-import { ref, reactive } from 'vue';
-import { /* convertFileSrc */ invoke } from '@tauri-apps/api/tauri';
-import { downloadDir } from '@tauri-apps/api/path';
-import { save, open } from '@tauri-apps/api/dialog';
 import { Message } from '@arco-design/web-vue';
 import { checkM3U8Url } from '@/utils/validator';
-
-interface PayloadDownload {
-  downloadType: string;
-  message: string;
-  total: number;
-  current: number;
-}
+import { useDownloadListener } from '@/composable/useDownloadListener';
+import { useDownloadM3u8 } from '@/composable/useDownloadM3u8';
+import { useDownloadNormal } from '@/composable/useDownloadNormal';
 
 const props = defineProps({
   mediaUrl: {
@@ -60,79 +54,18 @@ const props = defineProps({
     default: '',
   },
 });
-const loading = ref(false);
-const downloadPayload = ref<PayloadDownload>({ downloadType: 'm3u8', message: '', total: 0, current: 0 });
-appWindow.listen('download', (e) => {
-  console.log('-----download:', e.payload);
-  downloadPayload.value = e.payload as PayloadDownload;
-});
+const { percent, downloadPayload } = useDownloadListener();
+const { download: downloadM3u8, loading: m3u8Loading } = useDownloadM3u8();
+const { download: downloadNormal, loading: normalLoading } = useDownloadNormal();
+
+//
 // 下载
 async function handleDownloadClick() {
   if (!props.mediaUrl) return Message.info({ content: '请输入正确的链接' });
   if (checkM3U8Url(props.mediaUrl)) {
-    await downloadM3u8();
+    await downloadM3u8(props.mediaUrl);
   } else {
-    await downloadNormal();
-  }
-}
-
-async function downloadM3u8() {
-  try {
-    const downloadDirPath = await downloadDir();
-    const filePath = await open({
-      // TODO: 这个filters什么意思？？
-      // filters: [
-      //   {
-      //     name: 'Video',
-      //     extensions: ['mp4'],
-      //   },
-      //   {
-      //     name: 'Image',
-      //     extensions: ['png', 'jpg', 'jpeg'],
-      //   },
-      // ],
-      directory: true,
-      defaultPath: downloadDirPath,
-    });
-    if (!filePath) return;
-    console.log('------', filePath);
-    loading.value = true;
-    const res = await invoke('m3u8_download', {
-      m3u8Url: props.mediaUrl,
-      savePath: filePath,
-    });
-    console.log('------', res);
-    Message.success({ content: '下载成功！' });
-  } finally {
-    loading.value = false;
-  }
-}
-
-async function downloadNormal() {
-  try {
-    const downloadDirPath = await downloadDir();
-    const filePath = await save({
-      // TODO: 这个filters什么意思？？
-      // filters: [
-      //   {
-      //     name: 'Video',
-      //     extensions: ['mp4'],
-      //   },
-      //   {
-      //     name: 'Image',
-      //     extensions: ['png', 'jpg', 'jpeg'],
-      //   },
-      // ],
-      defaultPath: downloadDirPath,
-    });
-    if (!filePath) return;
-    console.log('------', filePath);
-    loading.value = true;
-    const res = await invoke('video_download', { url: props.mediaUrl, path: filePath });
-    console.log('------', res);
-    Message.success({ content: '下载成功！' });
-  } finally {
-    loading.value = false;
+    await downloadNormal(props.mediaUrl);
   }
 }
 </script>
@@ -148,17 +81,27 @@ async function downloadNormal() {
 }
 
 .progress {
-  display: flex;
+  position: relative;
   width: 100%;
   align-items: center;
   background-color: #f7f7f7;
 }
 
+.progress__track {
+  height: 10px;
+  font-size: 10px;
+  line-height: 10px;
+}
+
 .progress__chunk {
-  width: 5px;
-  height: 5px;
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 10px;
   box-sizing: border-box;
-  background-color: #f7f7f7;
+  background-color: rgb(37 93 197 / 72%);
 
   /* border: 1px solid #f7f7f7; */
 }

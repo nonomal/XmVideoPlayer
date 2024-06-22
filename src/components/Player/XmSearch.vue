@@ -2,17 +2,12 @@
   <div class="wrapper">
     <div class="search">
       <a-auto-complete
-        ref="searchRef"
         :model-value="modelValue"
-        :filter-option="
-          (v, option) => {
-            if (!option.label) return true;
-            return checkPinYin(option.label, v);
-          }
-        "
         :data="options"
         :placeholder="placeholder"
         :allow-clear="true"
+        :filter-option="false"
+        :spellcheck="false"
         @change="(v: string) => $emit('update:modelValue', v)"
         @clear="handleClear"
         @press-enter="() => handleSubmit()"
@@ -51,18 +46,15 @@ import { ref, onMounted, h } from 'vue';
 import { downloadDir } from '@tauri-apps/api/path';
 import { convertFileSrc } from '@tauri-apps/api/tauri';
 import { save, open } from '@tauri-apps/api/dialog';
-import { AutoComplete, Modal, Message } from '@arco-design/web-vue';
+import { Modal, Message } from '@arco-design/web-vue';
 // dropdown-button 没有自动导入button的样式  UPDATE:@arco-plugins/vite-vue 插件会自动加载组件样式 https://arco.design/vue/docs/start
 // import '@arco-design/web-vue/es/button/style/css.js';
 // import '@arco-design/web-vue/es/modal/style/css.js';
 import API from '@/api';
-import { checkPinYin } from './utils';
-
-interface HistoryOpt {
-  label: string;
-  value: string;
-  id: number;
-}
+import { useDebounceFn } from '@vueuse/core';
+import { decodeURIComponentIgnoreError, decodeURL } from '@/utils/tools';
+// import { checkPinYin } from '@/utils/tools';
+type HListItem = Await<ReturnType<typeof API.idb.getPlayerHistoryInfo>>['data'] & { label: string; value: string };
 
 const props = defineProps({
   modelValue: {
@@ -78,26 +70,29 @@ const props = defineProps({
 // 可以重载的函数类型定义
 const emits = defineEmits<{
   (e: 'update:modelValue', v?: string): void;
-  (e: 'submit', v?: string): void;
+  (e: 'submit', v: number): void;
 }>();
 
-const options = ref<HistoryOpt[]>([]);
-const searchRef = ref<InstanceType<typeof AutoComplete>>();
+const options = ref<HListItem[]>([]);
 const hisEditVisible = ref(false);
-const hisEditData = ref<HistoryOpt>();
+const hisEditData = ref<HListItem>();
 
 onMounted(() => {
   getPlayList();
 });
 
 // 获取播放列表
-async function getPlayList() {
-  const { data = [] } = await API.idb.getPlayerHistoryList();
-  options.value = data.map((item) => ({ label: item.name, value: item.url, id: item.id }));
+async function getPlayList(keyword?: string) {
+  const { data } = await API.idb.getPlayerHistoryPageList({ page: { pageNo: 1, pageSize: 50 }, keyword });
+  options.value = (data?.list || []).map((item) => ({
+    ...item,
+    label: decodeURL(item.name),
+    value: decodeURIComponentIgnoreError(item.url),
+  }));
 }
 
 // 删除播放记录
-async function handleOptDelete(e: Event, opt: HistoryOpt) {
+async function handleOptDelete(e: Event, opt: HListItem) {
   e.stopPropagation();
   Modal.confirm({
     title: '删除确认',
@@ -105,11 +100,11 @@ async function handleOptDelete(e: Event, opt: HistoryOpt) {
     content: () =>
       h('div', { style: 'word-break: break-all' }, [
         h('span', null, '确认删除'),
-        h('span', { style: 'color: red; margin: 0 3px' }, opt.label),
+        h('span', { style: 'color: red; margin: 0 3px' }, decodeURIComponentIgnoreError(opt.name)),
         h('span', null, '吗？'),
       ]),
     async onBeforeOk(done) {
-      await API.idb.deletePlayerHistory(opt.id);
+      await API.idb.deletePlayerHistory(opt?.id || -1);
       await getPlayList();
       Message.success('删除成功');
       done(true);
@@ -118,7 +113,7 @@ async function handleOptDelete(e: Event, opt: HistoryOpt) {
 }
 
 // 编辑播放记录
-async function handleOptEdit(e: Event, opt: HistoryOpt) {
+async function handleOptEdit(e: Event, opt: HListItem) {
   e.stopPropagation();
   hisEditVisible.value = true;
   hisEditData.value = opt;
@@ -131,26 +126,28 @@ async function handleOptEditSuccess() {
   hisEditVisible.value = false;
 }
 
-// 可以发起请求远程获取
-function handleSearch(v: string) {
-  // 可以不要
-  // options.value = m3u8List.filter((item) => checkPinYin(item.label, v));
+//
+async function onSearch(v?: string) {
+  await getPlayList(v);
 }
+
+//
+const handleSearch = useDebounceFn(onSearch, 500);
+
 // Clear
 function handleClear() {
   emits('update:modelValue', undefined);
-  // options.value = m3u8List;
+  getPlayList();
 }
 
 // Submit
 async function handleSubmit(url?: string) {
   const val = url ?? props.modelValue;
-  // TODO: URI校验
   if (!val) return Message.info({ content: '请输入正确的链接' });
-  emits('submit', val);
-  await API.idb.savePlayerHistory({ name: val, url: val });
-  await getPlayList();
-  console.log('-----新增成功:', val);
+  if (!/^(((ht|f)tps?)|stream):\/\//.test(val)) return Message.info({ content: '请输入正确的链接' });
+  const { data } = await API.idb.savePlayerHistory({ name: val, url: val });
+  emits('submit', data);
+  await getPlayList(url);
 }
 
 function handleSelect() {}

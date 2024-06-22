@@ -4,7 +4,10 @@
 )]
 
 // use std::io::prelude::*;
+use crate::command::payload::Payload;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::time::Duration;
+// use std::time::Duration;
 use std::{
     cmp::min,
     io::{Read, Seek, SeekFrom},
@@ -12,6 +15,7 @@ use std::{
     // process::{Command, Stdio},
 };
 use tauri::http::{HttpRange, ResponseBuilder};
+use tauri::GlobalShortcutManager;
 use tauri::Manager;
 use tauri::{CustomMenuItem, SystemTray, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem};
 
@@ -19,9 +23,12 @@ pub mod command;
 pub mod s;
 pub mod state;
 pub mod utils;
+pub mod vsd;
 
 fn main() {
-    // here `"quit".to_string()` defines the menu item id, and the second parameter is the menu item label.
+    // https://tauri.app/v1/guides/building/macos
+    let _ = fix_path_env::fix(); // A Rust crate to fix the PATH environment variable on macOS and Linux when running a GUI app.
+                                 // here `"quit".to_string()` defines the menu item id, and the second parameter is the menu item label.
     let quit = CustomMenuItem::new("quit".to_string(), "退出");
     let visible = CustomMenuItem::new("visible".to_string(), "隐藏");
     let tray_menu = SystemTrayMenu::new()
@@ -34,6 +41,10 @@ fn main() {
         .on_system_tray_event(|app, event| {
             let window_visible = app.state::<state::WindowVisible>();
             let window = app.get_window("main").unwrap();
+            let sv = match app.get_window("splashscreen") {
+                Some(v) => v.is_visible().unwrap_or(false),
+                None => false,
+            };
             let item_handle = app.tray_handle().get_item("visible");
             match event {
                 SystemTrayEvent::LeftClick {
@@ -41,33 +52,39 @@ fn main() {
                     size: _,
                     ..
                 } => {
-                    window_visible.0.store(true, Ordering::Relaxed);
-                    window.show().unwrap();
-                    item_handle.set_title("隐藏").unwrap();
-                    println!(
-                        "system tray received a left click, and {:?}",
-                        window_visible
-                    );
+                    if !sv {
+                        window_visible.0.store(true, Ordering::Relaxed);
+                        window.show().unwrap();
+                        item_handle.set_title("隐藏").unwrap();
+                        println!(
+                            "system tray received a left click, and {:?}",
+                            window_visible
+                        );
+                    }
                 }
                 SystemTrayEvent::RightClick {
                     position: _,
                     size: _,
                     ..
                 } => {
-                    window_visible.0.store(true, Ordering::Relaxed);
-                    window.show().unwrap();
-                    item_handle.set_title("隐藏").unwrap();
-                    println!("system tray received a right click");
+                    if !sv {
+                        window_visible.0.store(true, Ordering::Relaxed);
+                        window.show().unwrap();
+                        item_handle.set_title("隐藏").unwrap();
+                        println!("system tray received a right click");
+                    }
                 }
                 SystemTrayEvent::DoubleClick {
                     position: _,
                     size: _,
                     ..
                 } => {
-                    window_visible.0.store(true, Ordering::Relaxed);
-                    window.show().unwrap();
-                    item_handle.set_title("隐藏").unwrap();
-                    println!("system tray received a double click");
+                    if !sv {
+                        window_visible.0.store(true, Ordering::Relaxed);
+                        window.show().unwrap();
+                        item_handle.set_title("隐藏").unwrap();
+                        println!("system tray received a double click");
+                    }
                 }
                 SystemTrayEvent::MenuItemClick { id, .. } => {
                     // get a handle to the clicked menu item
@@ -80,17 +97,19 @@ fn main() {
                             std::process::exit(0);
                         }
                         "visible" => {
-                            let visible = window_visible.0.load(Ordering::Relaxed);
-                            if visible {
-                                window_visible.0.store(false, Ordering::Relaxed);
-                                window.hide().unwrap();
-                                // you can also `set_selected`, `set_enabled` and `set_native_image` (macOS only).
-                                item_handle.set_title("显示").unwrap();
-                            } else {
-                                window_visible.0.store(true, Ordering::Relaxed);
-                                window.show().unwrap();
-                                // you can also `set_selected`, `set_enabled` and `set_native_image` (macOS only).
-                                item_handle.set_title("隐藏").unwrap();
+                            if !sv {
+                                let visible = window_visible.0.load(Ordering::Relaxed);
+                                if visible {
+                                    window_visible.0.store(false, Ordering::Relaxed);
+                                    window.hide().unwrap();
+                                    // you can also `set_selected`, `set_enabled` and `set_native_image` (macOS only).
+                                    item_handle.set_title("显示").unwrap();
+                                } else {
+                                    window_visible.0.store(true, Ordering::Relaxed);
+                                    window.show().unwrap();
+                                    // you can also `set_selected`, `set_enabled` and `set_native_image` (macOS only).
+                                    item_handle.set_title("隐藏").unwrap();
+                                }
                             }
                         }
                         _ => {}
@@ -99,11 +118,51 @@ fn main() {
                 _ => {}
             }
         })
-        .setup(|_app| {
+        .setup(|app| {
+            //
             if let Some(mut home_dir) = tauri::api::path::home_dir() {
                 home_dir.push(".xmvideoplayer");
                 std::fs::create_dir_all(&home_dir)?;
             }
+            let main_window = app.get_window("main").unwrap();
+            let m_w_1 = main_window.clone();
+            let m_w_2 = main_window.clone();
+            tauri::async_runtime::spawn(async move {
+                loop {
+                    m_w_1
+                        .emit(
+                            "pong",
+                            Payload {
+                                message: "XmVideoPlayer@singcl<https://github.com/singcl>".into(),
+                            },
+                        )
+                        .unwrap();
+                    // std::thread::sleep(std::time::Duration::from_secs(5));
+                    async_std::task::sleep(std::time::Duration::from_secs(5)).await;
+                }
+            });
+            // std::thread::spawn(move || loop {
+            //     main_window
+            //         .emit(
+            //             "pong",
+            //             Payload {
+            //                 message: "XmVideoPlayer@singcl<https://github.com/singcl>".into(),
+            //             },
+            //         )
+            //         .unwrap();
+            //     std::thread::sleep(Duration::from_millis(5000));
+            // });
+            let splashscreen_window = app.get_window("splashscreen").unwrap();
+
+            tauri::async_runtime::spawn(async move {
+                xvp::ffmpeg_c::dl_c::auto_download(&splashscreen_window)
+                    .await
+                    .unwrap();
+                tokio::time::sleep(Duration::from_millis(1500)).await;
+                splashscreen_window.close().unwrap();
+                m_w_2.show().unwrap();
+            });
+
             Ok(())
         })
         .on_window_event(|event| match event.event() {
@@ -126,7 +185,7 @@ fn main() {
             #[cfg(target_os = "windows")]
             let path = request.uri().strip_prefix("stream://localhost/").unwrap();
             #[cfg(not(target_os = "windows"))]
-            let path = request.uri().strip_prefix("stream://").unwrap();
+            let path = request.uri().strip_prefix("stream://localhost/").unwrap();
             let path = percent_encoding::percent_decode(path.as_bytes())
                 .decode_utf8_lossy()
                 .to_string();
@@ -200,7 +259,7 @@ fn main() {
         .manage(state::WindowVisible(AtomicBool::new(true)))
         .invoke_handler(tauri::generate_handler![
             command::normal::greet,
-            command::normal::init_process,
+            // command::normal::init_process,
             command::normal::db_read,
             command::normal::db_insert,
             command::normal::increment_counter,
@@ -213,10 +272,28 @@ fn main() {
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application")
-        .run(|_app_handle, event| match event {
-            tauri::RunEvent::ExitRequested { api, .. } => {
-                api.prevent_exit();
+        .run(|_app_handle, event| {
+            //
+            let _app_handle_c = _app_handle.clone();
+            let mut short_cut = _app_handle.global_shortcut_manager(); //获取快捷键管理实例
+            let _result = short_cut.register("f11", move || {
+                //设置f11快捷键: 全屏
+                if let Some(main_window) = _app_handle_c.get_window("main") {
+                    if let Ok(v) = main_window.is_fullscreen() {
+                        if v {
+                            main_window.set_fullscreen(false).ok();
+                        } else {
+                            main_window.set_fullscreen(true).ok();
+                            main_window.set_focus().ok();
+                        }
+                    }
+                }
+            });
+            match event {
+                tauri::RunEvent::ExitRequested { api, .. } => {
+                    api.prevent_exit();
+                }
+                _ => {}
             }
-            _ => {}
         });
 }
